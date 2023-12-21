@@ -1,0 +1,2 @@
+# morsey
+Simple text encryption
