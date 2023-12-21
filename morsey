@@ -1,0 +1,173 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+class Morsey
+  FULL = ('A'..'Z').to_a
+
+  FINAL_DOT = %w[A E I].freeze
+  FINAL_DASH = %w[O U Y].freeze
+
+  DOTS = %w[B C D F G H J K L M].freeze
+  DASHES = %w[N P Q R S T V W X Z].freeze
+
+  L2M = {
+    'A' => '.-',
+    'B' => '-...',
+    'C' => '-.-.',
+    'D' => '-..',
+    'E' => '.',
+    'F' => '..-.',
+    'G' => '--.',
+    'H' => '....',
+    'I' => '..',
+    'J' => '.---',
+    'K' => '-.-',
+    'L' => '.-..',
+    'M' => '--',
+    'N' => '-.',
+    'O' => '---',
+    'P' => '.--.',
+    'Q' => '--.-',
+    'R' => '.-.',
+    'S' => '...',
+    'T' => '-',
+    'U' => '..-',
+    'V' => '...-',
+    'W' => '.--',
+    'X' => '-..-',
+    'Y' => '-.--',
+    'Z' => '--..',
+    '0' => '-----',
+    '1' => '.----',
+    '2' => '..---',
+    '3' => '...--',
+    '4' => '....-',
+    '5' => '.....',
+    '6' => '-....',
+    '7' => '--...',
+    '8' => '---..',
+    '9' => '----.',
+    '.' => '.-.-.-',
+    ',' => '--..--',
+    '?' => '..--..',
+    "'" => '.----.',
+    '!' => '-.-.--',
+    '/' => '-..-.',
+    '(' => '-.--.',
+    ')' => '-.--.-',
+    '&' => '.-...',
+    ':' => '---...',
+    ';' => '-.-.-.',
+    '=' => '-...-',
+    '+' => '.-.-.',
+    '-' => '-....-',
+    '_' => '..--.-',
+    '"' => '.-..-.',
+    '$' => '...-..-',
+    '@' => '.--.-.',
+    '¿' => '..-.-',
+    '¡' => '--...-'
+  }.freeze
+
+  def initialize
+    @m2l = {}
+
+    L2M.each do |k, v|
+      @m2l[v] = k
+    end
+  end
+
+  def encode(message)
+    text = message.chomp.upcase.gsub(/\s+/, ' ').strip
+
+    l = String.new
+    text.each_char do |c|
+      l << (L2M.key?(c) ? convert(L2M[c]) : c)
+    end
+    l
+  end
+
+  def decode(message)
+    l = []
+    t = String.new
+    message.each_char do |c|
+      if FULL.include?(c)
+        t << c
+      else
+        l << t.dup
+        t.clear
+      end
+    end
+    l << t.dup
+
+    k = []
+    l.each do |s|
+      t.clear
+      s.each_char do |c|
+        if DOTS.include?(c)
+          t << '.'
+        elsif FINAL_DOT.include?(c)
+          t << '.'
+          k << t.dup
+          t.clear
+        elsif DASHES.include?(c)
+          t << '-'
+        else
+          t << '-'
+          k << t.dup
+          t.clear
+        end
+      end
+      k << t.dup
+    end
+
+    t.clear
+    k.each do |s|
+      t << (s == '' ? ' ' : @m2l[s])
+    end
+
+    t.strip
+  end
+
+  private
+
+  def convert(text)
+    l = String.new
+    text[0..-2].each_char do |c|
+      l << (c == '.' ? DOTS.sample : DASHES.sample)
+    end
+
+    l << (text[-1] == '.' ? FINAL_DOT.sample : FINAL_DASH.sample)
+
+    l
+  end
+end
+
+filename = ''
+mode = 'encode'
+
+case ARGV[0]
+when '-e', '--encode'
+  filename = ARGV[1]
+when '-d', '--decode'
+  filename = ARGV[1]
+  mode = 'decode'
+else
+  puts 'Select either --encode or --decode'
+  exit 1
+end
+
+unless File.exist?(filename)
+  puts "Cannot read from [#{filename}]"
+  exit 1
+end
+
+message = File.open(filename, 'r').readlines.join('')
+
+m = Morsey.new
+
+if mode == 'encode'
+  puts m.encode(message)
+else
+  puts m.decode(message)
+end
